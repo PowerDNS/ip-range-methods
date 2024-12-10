@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import bisect
+import collections
 import ipaddress
+
+from prettytable import PrettyTable
 
 views = {
     '192.0.2.0/24': 1,
@@ -40,6 +43,8 @@ class MethodBase:
         return f"{str(self.__class__).split('.')[-1][:-2]} " \
                f"with {len(self.views)} entries"
 
+    def methodname(self):
+        return f"{str(self.__class__).split('.')[-1][:-2]}"
 
 @registerMethod
 class MethodScan(MethodBase):
@@ -79,8 +84,12 @@ class MethodBisectSortedNoScan(MethodBase):
         return ViewLookupResult(ip, res[1], res[2], 0)
 
 if __name__ == '__main__':
+    table = PrettyTable()
+    table.add_column("IP", list(ips.keys()))
     for method in methods:
+        methodresults = []
         db = method(views)
+        # table.field_names.append(db.methodname()[6:])
         print(f"testing {db}")
         ops = 0
         for ip, view in ips.items():
@@ -88,4 +97,9 @@ if __name__ == '__main__':
             print(f"{res.ip} in {res.net} with view {res.view}, {res.ops} ops")
             # assert res.view == view
             ops += res.ops
+            methodresults.append(res.view)
+            # ipresults[ip] =
         print(f"total {ops} ops")
+        table.add_column(db.methodname()[6:], methodresults)
+    print(table.field_names)
+    print(table)
