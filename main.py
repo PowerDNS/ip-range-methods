@@ -26,6 +26,7 @@ methods = []
 def registerMethod(cls):
     methods.append(cls)
 
+
 class ViewLookupResult:
     def __init__(self, ip, net, view, ops):
         self.ip = ip
@@ -33,9 +34,12 @@ class ViewLookupResult:
         self.view = view
         self.ops = ops
 
+
 class MethodBase:
     def __str__(self):
-        return f"{str(self.__class__).split('.')[-1][:-2]} with {len(self.views)} entries"
+        return f"{str(self.__class__).split('.')[-1][:-2]} " \
+                "with {len(self.views)} entries"
+
 
 @registerMethod
 class MethodScan(MethodBase):
@@ -51,7 +55,7 @@ class MethodScan(MethodBase):
         view = None
         ops = 0
         for k, v in self.views.items():
-            ops+=1
+            ops += 1
             if ip in k and k.prefixlen > prefix:
                 net = k
                 view = v
@@ -64,8 +68,9 @@ if __name__ == '__main__':
         db = method(views)
         print(f"testing {db}")
         ops = 0
-        for ip in ips:
+        for ip, view in ips.items():
             res = db.lookup(ip)
             print(f"{res.ip} in {res.net} with view {res.view}, {res.ops} ops")
+            assert res.view == view
             ops += res.ops
         print(f"total {ops} ops")
