@@ -98,10 +98,11 @@ class MethodBisectSortedScan(MethodBase):
     def lookup(self, ip):
         ops = 0
         i = bisect.bisect(self.views, (ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)),))
+        print(i)
         res = None
         prefixlen = -1
         for idx in range(i, len(views)):
-            tmp = self.views[i]
+            tmp = self.views[idx]
             print(tmp)
             print(ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
             print(ipaddress.ip_address(ip),"in",tmp[1][0], ipaddress.ip_address(ip) in tmp[1][0])
@@ -109,13 +110,13 @@ class MethodBisectSortedScan(MethodBase):
                 print("got prefixlen", tmp[1][0].prefixlen)
                 res = tmp
                 prefixlen = tmp[1][0].prefixlen
-            else:
-                print
 
             if tmp[0] < ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)):
                 print("breaking")
                 print(tmp[0], ">", ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
                 break
+
+            ops += 1
         if res:
             print(res)
             return ViewLookupResult(ip, res[1][0], res[1][1], ops)
