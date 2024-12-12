@@ -73,15 +73,19 @@ class MethodBisectSortedNoScan(MethodBase):
     def __init__(self, views):
         self.views = []
         for k,v in views.items():
-            self.views.append(ipaddress.get_mixed_type_key(ipaddress.ip_network(k).broadcast_address) + (v,))
+            self.views.append(ipaddress.get_mixed_type_key(ipaddress.ip_network(k).broadcast_address) + (ipaddress.ip_network(k), v))
         self.views.sort()
         # print(self.views)
 
     def lookup(self, ip):
         i = bisect.bisect(self.views, ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
         res = self.views[i]
-        # print(res)
-        return ViewLookupResult(ip, res[1], res[2], 0)
+        print(res)
+        if ipaddress.ip_address(ip) in res[2]:
+            return ViewLookupResult(ip, res[1], res[3], 0)
+        else:
+            return ViewLookupResult(ip, None, None, 0)
+
 
 if __name__ == '__main__':
     table = PrettyTable()
