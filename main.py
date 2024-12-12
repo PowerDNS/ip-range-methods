@@ -86,6 +86,42 @@ class MethodBisectSortedNoScan(MethodBase):
         else:
             return ViewLookupResult(ip, None, None, 0)
 
+@registerMethod
+class MethodBisectSortedScan(MethodBase):
+    def __init__(self, views):
+        self.views = []
+        for k,v in views.items():
+            self.views.append((ipaddress.get_mixed_type_key(ipaddress.ip_network(k).broadcast_address), (ipaddress.ip_network(k), v)))
+        self.views.sort()
+        print(self.views)
+
+    def lookup(self, ip):
+        ops = 0
+        i = bisect.bisect(self.views, (ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)),))
+        res = None
+        prefixlen = -1
+        for idx in range(i, len(views)):
+            tmp = self.views[i]
+            print(tmp)
+            print(ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
+            print(ipaddress.ip_address(ip),"in",tmp[1][0], ipaddress.ip_address(ip) in tmp[1][0])
+            if ipaddress.ip_address(ip) in tmp[1][0] and tmp[1][0].prefixlen > prefixlen:
+                print("got prefixlen", tmp[1][0].prefixlen)
+                res = tmp
+                prefixlen = tmp[1][0].prefixlen
+            else:
+                print
+
+            if tmp[0] < ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)):
+                print("breaking")
+                print(tmp[0], ">", ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
+                break
+        if res:
+            print(res)
+            return ViewLookupResult(ip, res[1][0], res[1][1], ops)
+        else:
+            return ViewLookupResult(ip, None, None, 0)
+
 
 if __name__ == '__main__':
     table = PrettyTable()
@@ -101,7 +137,7 @@ if __name__ == '__main__':
             print(f"{res.ip} in {res.net} with view {res.view}, {res.ops} ops")
             # assert res.view == view
             ops += res.ops
-            methodresults.append(res.ops if res.view == view else -1)
+            methodresults.append((res.view, res.ops if res.view == view else -1))
             # ipresults[ip] =
         methodresults.append(ops)
         print(f"total {ops} ops")
