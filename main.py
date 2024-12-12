@@ -101,7 +101,7 @@ if __name__ == '__main__':
             print(f"{res.ip} in {res.net} with view {res.view}, {res.ops} ops")
             # assert res.view == view
             ops += res.ops
-            methodresults.append(res.view)
+            methodresults.append((res.ops if res.view == view else -1))
             # ipresults[ip] =
         print(f"total {ops} ops")
         table.add_column(db.methodname()[6:], methodresults)
