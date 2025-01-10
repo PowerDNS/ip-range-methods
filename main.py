@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import bisect
-import collections
 import ipaddress
 
+from collections import namedtuple
 from prettytable import PrettyTable
 
 views = {
@@ -30,12 +30,7 @@ def registerMethod(cls):
     methods.append(cls)
 
 
-class ViewLookupResult:
-    def __init__(self, ip, net, view, ops):
-        self.ip = ip
-        self.net = net
-        self.view = view
-        self.ops = ops
+ViewLookupResult = namedtuple('ViewLookupResult', ('ip', 'net', 'view', 'ops'))
 
 
 class MethodBase:
