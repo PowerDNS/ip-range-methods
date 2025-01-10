@@ -41,6 +41,7 @@ class MethodBase:
     def methodname(self):
         return f"{str(self.__class__).split('.')[-1][:-2]}"
 
+
 @registerMethod
 class MethodScan(MethodBase):
     def __init__(self, views):
@@ -67,7 +68,7 @@ class MethodScan(MethodBase):
 class MethodBisectSortedNoScan(MethodBase):
     def __init__(self, views):
         self.views = []
-        for k,v in views.items():
+        for k, v in views.items():
             self.views.append(ipaddress.get_mixed_type_key(ipaddress.ip_network(k).broadcast_address) + (ipaddress.ip_network(k), v))
         self.views.sort()
         # print(self.views)
@@ -81,11 +82,12 @@ class MethodBisectSortedNoScan(MethodBase):
         else:
             return ViewLookupResult(ip, None, None, 0)
 
+
 @registerMethod
 class MethodBisectSortedScan(MethodBase):
     def __init__(self, views):
         self.views = []
-        for k,v in views.items():
+        for k, v in views.items():
             self.views.append((ipaddress.get_mixed_type_key(ipaddress.ip_network(k).broadcast_address), (ipaddress.ip_network(k), v)))
         self.views.sort()
         print(self.views)
@@ -100,7 +102,7 @@ class MethodBisectSortedScan(MethodBase):
             tmp = self.views[idx]
             print(tmp)
             print(ipaddress.get_mixed_type_key(ipaddress.ip_address(ip)))
-            print(ipaddress.ip_address(ip),"in",tmp[1][0], ipaddress.ip_address(ip) in tmp[1][0])
+            print(ipaddress.ip_address(ip), "in", tmp[1][0], ipaddress.ip_address(ip) in tmp[1][0])
             if ipaddress.ip_address(ip) in tmp[1][0] and tmp[1][0].prefixlen > prefixlen:
                 print("got prefixlen", tmp[1][0].prefixlen)
                 res = tmp
