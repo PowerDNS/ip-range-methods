@@ -31,7 +31,7 @@ def registerMethod(cls):
     methods.append(cls)
 
 
-ViewLookupResult = namedtuple('ViewLookupResult', ('ip', 'net', 'view', 'ops'))
+ViewLookupResult = namedtuple('ViewLookupResult', ('ip', 'net', 'view'))
 
 
 class MethodBase:
@@ -62,7 +62,7 @@ class MethodScan(MethodBase):
                 net = k
                 view = v
                 prefix = k.prefixlen
-        return ViewLookupResult(ip, net, view, ops)
+        return ViewLookupResult(ip, net, view)
 
 
 @registerMethod
@@ -79,9 +79,9 @@ class MethodBisectSortedNoScan(MethodBase):
         res = self.views[i]
         print(res)
         if ipaddress.ip_address(ip) in res[2]:
-            return ViewLookupResult(ip, res[1], res[3], 0)
+            return ViewLookupResult(ip, res[1], res[3])
         else:
-            return ViewLookupResult(ip, None, None, 0)
+            return ViewLookupResult(ip, None, None)
 
 
 @registerMethod
@@ -117,9 +117,9 @@ class MethodBisectSortedScan(MethodBase):
             ops += 1
         if res:
             print(res)
-            return ViewLookupResult(ip, res[1][0], res[1][1], ops)
+            return ViewLookupResult(ip, res[1][0], res[1][1])
         else:
-            return ViewLookupResult(ip, None, None, 0)
+            return ViewLookupResult(ip, None, None)
 
 @registerMethod
 class MethodPostgresSimple(MethodBase):
@@ -138,9 +138,9 @@ class MethodPostgresSimple(MethodBase):
                 cur.execute(f"select net, tag from views where inet('{ip}') <<= net order by masklen(net) desc limit 1;")
                 res = cur.fetchone()
                 if res:
-                    return ViewLookupResult(ip, res[0], res[1], 0)
+                    return ViewLookupResult(ip, res[0], res[1])
                 else:
-                    return ViewLookupResult(ip, None, None, 0)
+                    return ViewLookupResult(ip, None, None)
 
 
 # this *has* to run after PostgresSimple
@@ -175,15 +175,15 @@ class MethodPostgresDouble(MethodBase):
                         print("NOT in", net, end="; ")
 
                 if res:
-                    return ViewLookupResult(ip, res[0], res[1], 0)
+                    return ViewLookupResult(ip, res[0], res[1])
                 else:
-                    return ViewLookupResult(ip, None, None, 0)
+                    return ViewLookupResult(ip, None, None)
 
 
 
 if __name__ == '__main__':
     table = PrettyTable()
-    table.add_column("IP", list(ips.keys()) + ["Total"])
+    table.add_column("IP", list(ips.keys()))
     for method in methods:
         methodresults = []
         db = method(views)
@@ -192,13 +192,10 @@ if __name__ == '__main__':
         ops = 0
         for ip, view in ips.items():
             res = db.lookup(ip)
-            print(f"{res.ip} in {res.net} with view {res.view}, {res.ops} ops")
+            print(f"{res.ip} in {res.net} with view {res.view}")
             # assert res.view == view
-            ops += res.ops
-            methodresults.append((res.view, res.ops if res.view == view else -1))
+            methodresults.append(res.view)
             # ipresults[ip] =
-        methodresults.append(ops)
-        print(f"total {ops} ops")
         table.add_column(db.methodname()[6:], methodresults)
     print(table.field_names)
     print(table)
