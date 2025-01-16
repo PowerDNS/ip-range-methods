@@ -2,6 +2,7 @@
 
 import bisect
 import ipaddress
+import psycopg
 
 from collections import namedtuple
 from prettytable import PrettyTable
@@ -119,6 +120,65 @@ class MethodBisectSortedScan(MethodBase):
             return ViewLookupResult(ip, res[1][0], res[1][1], ops)
         else:
             return ViewLookupResult(ip, None, None, 0)
+
+@registerMethod
+class MethodPostgresSimple(MethodBase):
+    def __init__(self, views):
+        self.views = views
+        with psycopg.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS views;")
+                cur.execute("CREATE TABLE views (net cidr, tag int);")
+                for k,v in views.items():
+                    cur.execute(f"insert into views values('{k}', {v});")
+
+    def lookup(self, ip):
+        with psycopg.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"select net, tag from views where inet('{ip}') <<= net order by masklen(net) desc limit 1;")
+                res = cur.fetchone()
+                if res:
+                    return ViewLookupResult(ip, res[0], res[1], 0)
+                else:
+                    return ViewLookupResult(ip, None, None, 0)
+
+
+# this *has* to run after PostgresSimple
+@registerMethod
+class MethodPostgresDouble(MethodBase):
+    def __init__(self, views):
+        self.views = views
+        with psycopg.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DROP TABLE IF EXISTS viewmap;")
+                cur.execute("CREATE TABLE viewmap (net cidr, netmin inet, netmax inet, tag int);")
+                cur.execute("insert into viewmap select net, host(net)::inet, host(broadcast(net))::inet, tag from views;")
+
+    def lookup(self, ip):
+        with psycopg.connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"select net, tag from viewmap where inet('{ip}') >= netmin order by netmin desc limit 1;")
+                res1 = cur.fetchone()
+                cur.execute(f"select net, tag from viewmap where inet('{ip}') <= netmax order by netmax asc limit 1;")
+                res2 = cur.fetchone()
+
+                res = None
+
+                print(ip, end=" ")
+                for res_ in (res1, res2):
+                    net, tag = res_
+                    b = ipaddress.ip_address(ip) in ipaddress.ip_network(net)
+                    if b:
+                        print("in", net, end="; ")
+                        res = res_
+                    else:
+                        print("NOT in", net, end="; ")
+
+                if res:
+                    return ViewLookupResult(ip, res[0], res[1], 0)
+                else:
+                    return ViewLookupResult(ip, None, None, 0)
+
 
 
 if __name__ == '__main__':
