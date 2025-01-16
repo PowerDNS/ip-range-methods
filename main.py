@@ -194,7 +194,10 @@ if __name__ == '__main__':
             res = db.lookup(ip)
             print(f"{res.ip} in {res.net} with view {res.view}")
             # assert res.view == view
-            methodresults.append(res.view)
+            if res.view == view:
+                methodresults.append(res.view)
+            else:
+                methodresults.append('XXX')
             # ipresults[ip] =
         table.add_column(db.methodname()[6:], methodresults)
     print(table.field_names)
